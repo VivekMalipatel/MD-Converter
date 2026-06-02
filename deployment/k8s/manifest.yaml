@@ -27,7 +27,7 @@ spec:
                     values: ["amd64"]
       containers:
         - name: md-converter
-          image: ghcr.io/vivekmalipatel/md-converter:latest
+          image: ghcr.io/vivekmalipatel/md-converter:sha-5d3898d
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
@@ -51,7 +51,7 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 10
         - name: backend
-          image: ghcr.io/vivekmalipatel/md-converter-backend:latest
+          image: ghcr.io/vivekmalipatel/md-converter-backend:sha-5d3898d
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8001
