@@ -1,0 +1,113 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: build-md-converter
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build:
+    name: Build & Push to GHCR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set image tag
+        id: tag
+        run: echo "tag=sha-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: true
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+          tags: |
+            ghcr.io/vivekmalipatel/md-converter:latest
+            ghcr.io/vivekmalipatel/md-converter:${{ steps.tag.outputs.tag }}
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          platforms: linux/amd64
+          push: true
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+          tags: |
+            ghcr.io/vivekmalipatel/md-converter-backend:latest
+            ghcr.io/vivekmalipatel/md-converter-backend:${{ steps.tag.outputs.tag }}
+
+      - name: Delete old frontend GHCR tags
+        continue-on-error: true
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: md-converter
+          package-type: container
+          min-versions-to-keep: 5
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Delete old backend GHCR tags
+        continue-on-error: true
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: md-converter-backend
+          package-type: container
+          min-versions-to-keep: 5
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update manifest with new image tags
+        run: |
+          sed -i "s|ghcr.io/vivekmalipatel/md-converter:sha-[a-f0-9]*|ghcr.io/vivekmalipatel/md-converter:${{ steps.tag.outputs.tag }}|g" deployment/k8s/manifest.yaml
+          sed -i "s|ghcr.io/vivekmalipatel/md-converter:latest|ghcr.io/vivekmalipatel/md-converter:${{ steps.tag.outputs.tag }}|g" deployment/k8s/manifest.yaml
+          sed -i "s|ghcr.io/vivekmalipatel/md-converter-backend:sha-[a-f0-9]*|ghcr.io/vivekmalipatel/md-converter-backend:${{ steps.tag.outputs.tag }}|g" deployment/k8s/manifest.yaml
+          sed -i "s|ghcr.io/vivekmalipatel/md-converter-backend:latest|ghcr.io/vivekmalipatel/md-converter-backend:${{ steps.tag.outputs.tag }}|g" deployment/k8s/manifest.yaml
+          git config user.email "ci@vivekmalipatel.com"
+          git config user.name "MD Converter CI"
+          git add deployment/k8s/manifest.yaml
+          git diff --staged --quiet || git commit -m "ci: deploy md-converter ${{ steps.tag.outputs.tag }} [skip ci]"
+          git pull --rebase origin main
+          git push
+
+      - name: Wait for rollout
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+          kubectl rollout status deployment/md-converter -n services --timeout=300s
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+          kubectl rollout undo deployment/md-converter -n services
+          echo "Rolled back md-converter — check logs above for root cause"

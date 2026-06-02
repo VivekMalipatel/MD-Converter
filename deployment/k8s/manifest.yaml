@@ -28,7 +28,7 @@ spec:
       containers:
         - name: md-converter
           image: ghcr.io/vivekmalipatel/md-converter:latest
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
           resources:
@@ -52,7 +52,7 @@ spec:
             periodSeconds: 10
         - name: backend
           image: ghcr.io/vivekmalipatel/md-converter-backend:latest
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8001
           resources:
