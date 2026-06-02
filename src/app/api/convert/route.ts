@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MarkItDown } from 'markitdown-ts';
 
-const SUPPORTED_EXTENSIONS = new Set([
-  '.pdf', '.docx', '.xlsx', '.html', '.txt', '.csv',
-  '.xml', '.rss', '.atom', '.ipynb', '.zip',
-  '.jpg', '.jpeg', '.png', '.gif', '.webp', '.tiff', '.bmp',
-  '.mp3', '.wav', '.ogg', '.m4a',
-]);
+const BACKEND = 'http://127.0.0.1:8001/convert';
 
 export const maxDuration = 60;
 
@@ -23,30 +17,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No file provided.' }, { status: 400 });
   }
 
-  const ext = '.' + (file.name.split('.').pop() ?? '').toLowerCase();
-  if (!SUPPORTED_EXTENSIONS.has(ext)) {
-    return NextResponse.json(
-      {
-        error: `File type "${ext || file.name}" is not supported.\n\nSupported formats: ${[...SUPPORTED_EXTENSIONS].join(', ')}`,
-      },
-      { status: 422 },
-    );
-  }
+  const body = new FormData();
+  body.append('file', file);
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const markitdown = new MarkItDown();
-
-  let result;
+  let res: Response;
   try {
-    result = await markitdown.convertBuffer(buffer, { file_extension: ext });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: `Conversion failed: ${message}` }, { status: 422 });
+    res = await fetch(BACKEND, { method: 'POST', body });
+  } catch {
+    return NextResponse.json({ error: 'Backend unavailable. Please try again.' }, { status: 503 });
   }
 
-  if (!result || !result.markdown?.trim()) {
-    return NextResponse.json({ error: 'No content could be extracted from this file.' }, { status: 422 });
+  const data = await res.json() as Record<string, unknown>;
+  if (!res.ok) {
+    return NextResponse.json({ error: data.detail ?? 'Conversion failed.' }, { status: res.status });
   }
-
-  return NextResponse.json({ markdown: result.markdown, title: result.title ?? null });
+  return NextResponse.json(data);
 }
