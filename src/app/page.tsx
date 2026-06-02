@@ -3,35 +3,43 @@
 import { useCallback, useRef, useState } from 'react';
 
 const SUPPORTED_EXTENSIONS = [
-  '.pdf', '.docx', '.xlsx', '.html', '.txt', '.csv',
-  '.xml', '.rss', '.atom', '.ipynb', '.zip',
-  '.jpg', '.jpeg', '.png', '.gif', '.webp', '.tiff', '.bmp',
-  '.mp3', '.wav', '.ogg', '.m4a',
+  '.pdf',
+  '.docx', '.xlsx', '.xls', '.pptx',
+  '.epub', '.msg',
+  '.html', '.htm',
+  '.txt', '.text', '.md', '.markdown',
+  '.json', '.jsonl', '.csv',
+  '.jpg', '.jpeg', '.png',
+  '.wav', '.mp3', '.m4a', '.mp4',
+  '.ipynb', '.zip',
 ];
 
 const EXTENSION_LABELS: Record<string, string> = {
   '.pdf': 'PDF',
   '.docx': 'Word',
   '.xlsx': 'Excel',
+  '.xls': 'Excel',
+  '.pptx': 'PowerPoint',
+  '.epub': 'EPUB',
+  '.msg': 'Outlook',
   '.html': 'HTML',
+  '.htm': 'HTML',
   '.txt': 'Text',
+  '.text': 'Text',
+  '.md': 'Markdown',
+  '.markdown': 'Markdown',
+  '.json': 'JSON',
+  '.jsonl': 'JSON',
   '.csv': 'CSV',
-  '.xml': 'XML',
-  '.rss': 'RSS',
-  '.atom': 'Atom',
-  '.ipynb': 'Jupyter',
-  '.zip': 'ZIP',
   '.jpg': 'JPEG',
   '.jpeg': 'JPEG',
   '.png': 'PNG',
-  '.gif': 'GIF',
-  '.webp': 'WebP',
-  '.tiff': 'TIFF',
-  '.bmp': 'BMP',
-  '.mp3': 'MP3',
   '.wav': 'WAV',
-  '.ogg': 'OGG',
+  '.mp3': 'MP3',
   '.m4a': 'M4A',
+  '.mp4': 'MP4',
+  '.ipynb': 'Jupyter',
+  '.zip': 'ZIP',
 };
 
 type State =
@@ -142,7 +150,7 @@ export default function Page() {
         <div className="mb-10 text-center">
           <h1 className="text-4xl font-bold tracking-tight text-white mb-2">MD Converter</h1>
           <p className="text-zinc-400 text-base">
-            Convert PDF, Word, Excel, images, and more to clean Markdown — instantly, in your browser.
+            Convert PDF, Word, Excel, PowerPoint, EPUB, images, audio, and more to clean Markdown — processed server-side via Python.
           </p>
         </div>
 
@@ -278,8 +286,8 @@ export default function Page() {
         {/* Footer */}
         <p className="text-center text-zinc-700 text-xs mt-10">
           Powered by{' '}
-          <a href="https://www.npmjs.com/package/markitdown-ts" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-500 underline">
-            markitdown-ts
+          <a href="https://github.com/microsoft/markitdown" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-500 underline">
+            markitdown
           </a>
           {' '}· Files processed server-side, never stored
         </p>
