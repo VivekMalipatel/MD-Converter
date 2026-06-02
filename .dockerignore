@@ -1,0 +1,13 @@
+node_modules
+.git
+*.log
+deployment
+docs
+README.md
+src
+package.json
+package-lock.json
+tsconfig.json
+next.config.mjs
+tailwind.config.js
+postcss.config.mjs
