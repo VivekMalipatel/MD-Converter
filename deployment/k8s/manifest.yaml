@@ -94,7 +94,7 @@ metadata:
   name: md-converter
   namespace: kube-system
   annotations:
-    external-dns.alpha.kubernetes.io/target: "96.84.67.209"
+    external-dns.alpha.kubernetes.io/target: "52.15.142.97"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
   entryPoints:
